@@ -1,0 +1,111 @@
+{
+  "info": {
+    "_postman_id": "7a33ef01-92be-442a-a53b-e85d66d0c2e1",
+    "name": "CloudFleet Microservices Postman Collection",
+    "description": "API collection for logistics and fleet tracking microservice mesh.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Auth Service",
+      "item": [
+        {
+          "name": "Login User",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"driver_01\",\n  \"password\": \"SecretPass123\"\n}"
+            },
+            "url": {
+              "raw": "https://fleet.example.com/api/v1/auth/login",
+              "protocol": "https",
+              "host": ["fleet", "example", "com"],
+              "path": ["api", "v1", "auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Vehicles & Telemetry",
+      "item": [
+        {
+          "name": "Get Vehicle by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://fleet.example.com/api/v1/vehicles/:vehicleId",
+              "protocol": "https",
+              "host": ["fleet", "example", "com"],
+              "path": ["api", "v1", "vehicles", ":vehicleId"],
+              "variable": [
+                {
+                  "key": "vehicleId",
+                  "value": "1001",
+                  "description": "Vehicle internal ID"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Vehicle Telemetry",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lat\": 37.7749,\n  \"lng\": -122.4194,\n  \"speed\": 65.5\n}"
+            },
+            "url": {
+              "raw": "https://fleet.example.com/api/v1/vehicles/:vehicleId/telemetry",
+              "protocol": "https",
+              "host": ["fleet", "example", "com"],
+              "path": ["api", "v1", "vehicles", ":vehicleId", "telemetry"],
+              "variable": [
+                {
+                  "key": "vehicleId",
+                  "value": "1001"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin Management",
+      "item": [
+        {
+          "name": "List All Dispatch Drivers",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://fleet.example.com/api/v1/admin/drivers",
+              "protocol": "https",
+              "host": ["fleet", "example", "com"],
+              "path": ["api", "v1", "admin", "drivers"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

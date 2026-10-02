@@ -1,0 +1,305 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "ShopSentinel E-Commerce API",
+    "description": "Production and Internal E-commerce microservice platform containing realistic endpoint workflows.",
+    "version": "1.4.2"
+  },
+  "servers": [
+    {
+      "url": "http://api.shopsentinel-staging.net/v1",
+      "description": "Staging Server (Insecure HTTP)"
+    },
+    {
+      "url": "https://api.shopsentinel.com/v1",
+      "description": "Production API"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "email": { "type": "string" },
+          "fullName": { "type": "string" },
+          "role": { "type": "string" },
+          "passwordHash": { "type": "string" },
+          "ssn": { "type": "string" },
+          "internalCost": { "type": "number" },
+          "adminNotes": { "type": "string" }
+        }
+      },
+      "Order": {
+        "type": "object",
+        "properties": {
+          "orderId": { "type": "integer" },
+          "userId": { "type": "string" },
+          "totalAmount": { "type": "number" },
+          "creditCard": { "type": "string" },
+          "status": { "type": "string" },
+          "items": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/api/auth/login": {
+      "post": {
+        "summary": "Authenticate user credentials",
+        "description": "Validates email and password to return bearer JWT.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string" },
+                  "password": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": { "type": "string" },
+                    "user": { "$ref": "#/components/schemas/User" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/{id}": {
+      "get": {
+        "summary": "Retrieve user profile by identifier",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User profile data",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/User" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete user profile",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "204": { "description": "User deleted" }
+        }
+      }
+    },
+    "/api/admin/users": {
+      "get": {
+        "summary": "List all registered users (Admin)",
+        "description": "Administrative overview of registered accounts.",
+        "responses": {
+          "200": {
+            "description": "List of user records",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/User" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/users/{id}/promote": {
+      "post": {
+        "summary": "Promote user to administrator",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "User role updated" }
+        }
+      }
+    },
+    "/api/orders": {
+      "get": {
+        "summary": "List user orders",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "User orders",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Order" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/orders/{orderId}": {
+      "get": {
+        "summary": "Get order details by numeric ID",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Order details",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Order" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Cancel order",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Order cancelled" }
+        }
+      }
+    },
+    "/api/payment/checkout": {
+      "post": {
+        "summary": "Process payment transaction",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "amount": { "type": "number" },
+                  "currency": { "type": "string" },
+                  "cardNumber": { "type": "string" },
+                  "cvv": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Payment receipt" }
+        }
+      }
+    },
+    "/api/coupons/redeem": {
+      "post": {
+        "summary": "Redeem promotional discount voucher",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "code",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Discount applied" }
+        }
+      }
+    },
+    "/api/integrations/webhook-fetch": {
+      "post": {
+        "summary": "Fetch webhook notifications from custom endpoint",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "targetUrl",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Webhook payload received" }
+        }
+      }
+    },
+    "/api/media/upload": {
+      "post": {
+        "summary": "Upload product image or attachment",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": { "type": "string", "format": "binary" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "File upload URL" }
+        }
+      }
+    }
+  }
+}

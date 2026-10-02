@@ -1,0 +1,119 @@
+openapi: 3.0.3
+info:
+  title: Apex Secure FinTech Banking API
+  description: Hardened banking transaction gateway conforming to strict OWASP API Security best practices.
+  version: 2.1.0
+servers:
+  - url: https://api.apexbank.com/v2
+    description: Production Gateway (Mutual TLS 1.3)
+components:
+  securitySchemes:
+    OAuth2Auth:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://auth.apexbank.com/oauth/v2/authorize
+          tokenUrl: https://auth.apexbank.com/oauth/v2/token
+          scopes:
+            read:accounts: Read customer accounts
+            write:transfers: Execute fund transfer
+            admin:audit: Administrative audit log
+  schemas:
+    AccountSummary:
+      type: object
+      required:
+        - accountId
+        - currency
+        - availableBalance
+      properties:
+        accountId:
+          type: string
+          format: uuid
+        currency:
+          type: string
+          enum: [USD, EUR, GBP]
+        availableBalance:
+          type: number
+          minimum: 0
+    TransferRequest:
+      type: object
+      required:
+        - destinationAccountId
+        - amount
+        - currency
+        - idempotencyKey
+      properties:
+        destinationAccountId:
+          type: string
+          format: uuid
+        amount:
+          type: number
+          minimum: 0.01
+          maximum: 100000.00
+        currency:
+          type: string
+          enum: [USD, EUR, GBP]
+        idempotencyKey:
+          type: string
+          maxLength: 64
+paths:
+  /accounts/{accountId}:
+    get:
+      summary: Retrieve verified account details
+      description: Returns account details strictly scoped to the authenticated caller token. Rate limited to 60 req/min.
+      security:
+        - OAuth2Auth: [read:accounts]
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Account summary returned
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+            Retry-After:
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountSummary'
+  /transfers:
+    post:
+      summary: Execute atomic funds transfer
+      description: Enforces idempotency key and token-bucket rate limiting to prevent double spending.
+      security:
+        - OAuth2Auth: [write:transfers]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferRequest'
+      responses:
+        '201':
+          description: Transfer confirmed
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - transactionId
+                  - status
+                properties:
+                  transactionId:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    enum: [PENDING, COMPLETED]
